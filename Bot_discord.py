@@ -5,7 +5,7 @@ import os
 import asyncio
 
 # Configuration
-TOKEN = 'MTQ4NDMxMjQxMTg5MTgyNjkzMQ.Gmjogp.7rsZ9sxbHHBJ-EHl084yGlICJey57laoWJ8LPY'
+TOKEN = os.getenv('DISCORD_TOKEN')
 CHANNEL_ID = 1484325069860769953
 API_URL = "https://civiweb-api-prd.azurewebsites.net/api/Offers/search"
 DB_FILE = "seen_jobs.txt"
