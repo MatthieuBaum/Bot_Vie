@@ -66,30 +66,54 @@ class JobBot(commands.Bot):
                 if not os.path.exists(DB_FILE):
                     open(DB_FILE, 'w').close()
                 
+                seen = {}
                 with open(DB_FILE, 'r') as f:
-                    seen_ids = set(f.read().splitlines())
+                    for line in f:
+                        line = line.strip()
+                        if ':' in line:
+                            job_id, msg_id = line.split(':', 1)
+                            seen[job_id] = int(msg_id)
 
                 new_count = 0
                 for job in reversed(offers):
                     job_id = str(job['id'])
                     
-                    if job_id not in seen_ids:
+                    if job_id not in seen:
+                        # Make Mexico jobs more visible with red color
+                        color = discord.Color.red() if job['countryName'] == 'Mexique' else discord.Color.blue()
                         embed = discord.Embed(
                             title=f"🌎 {job['countryName']} : {job['missionTitle']}",
                             url=f"https://mon-vie-via.businessfrance.fr/offres/{job_id}",
-                            color=discord.Color.blue()
+                            color=color
                         )
                         embed.add_field(name="🏢 Entreprise", value=job['organizationName'], inline=True)
                         embed.add_field(name="📍 Ville", value=job['cityName'], inline=True)
                         embed.add_field(name="💰 Indemnité", value=f"{job['indemnite']}€ / mois", inline=False)
+                        # Add description for all jobs
+                        description = job.get('description', 'Aucune description disponible')
+                        embed.add_field(name="📄 Description", value=description[:1000], inline=False)  # Limit to 1000 chars
                         
-                        await channel.send(embed=embed)
-                        
-                        with open(DB_FILE, 'a') as f:
-                            f.write(job_id + "\n")
-                        seen_ids.add(job_id)
+                        msg = await channel.send(embed=embed)
+                        seen[job_id] = msg.id
                         new_count += 1
                         await asyncio.sleep(1.5)
+                
+                # Synchronize DB_FILE with current offers and remove old messages
+                current_ids = set(str(job['id']) for job in offers)
+                for job_id, msg_id in seen.items():
+                    if job_id not in current_ids:
+                        try:
+                            msg = await channel.fetch_message(msg_id)
+                            await msg.delete()
+                        except discord.NotFound:
+                            pass  # Message already deleted
+                        except Exception as e:
+                            print(f"Error deleting message {msg_id}: {e}")
+                
+                with open(DB_FILE, 'w') as f:
+                    for job_id in current_ids:
+                        if job_id in seen:
+                            f.write(f"{job_id}:{seen[job_id]}\n")
                 
                 print(f"✅ Terminé. {new_count} nouvelles offres.")
         except Exception as e:
