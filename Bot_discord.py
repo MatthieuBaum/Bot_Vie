@@ -4,15 +4,16 @@ import requests
 import os
 import asyncio
 
-# Configuration
+# --- CONFIGURATION ---
 TOKEN = os.getenv('DISCORD_TOKEN')
 CHANNEL_ID = 1484325069860769953
 API_URL = "https://civiweb-api-prd.azurewebsites.net/api/Offers/search"
 DB_FILE = "seen_jobs.txt"
 
-# Payload Amérique Latine (Zone 3)
+# On augmente un peu la limite pour le scan de nettoyage (ex: 50 ou 100)
+# pour éviter de supprimer des offres valides mais un peu anciennes
 PAYLOAD = {
-    "limit": 20, # Augmenté à 20 pour ne rien rater
+    "limit": 50, 
     "skip": 0,
     "query": None,
     "geographicZones": ["3"],
@@ -29,7 +30,6 @@ PAYLOAD = {
     "missionStartDate": None
 }
 
-# Les HEADERS sont parfois nécessaires pour éviter le blocage
 HEADERS = {
     "Content-Type": "application/json",
     "Origin": "https://mon-vie-via.businessfrance.fr",
@@ -44,86 +44,89 @@ class JobBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
-        # Cette ligne lance la boucle AUTOMATIQUEMENT au démarrage.
-        # Pas besoin d'appels supplémentaires ailleurs.
         self.check_jobs.start()
 
     @tasks.loop(minutes=30)
     async def check_jobs(self):
-        # On attend que le bot soit prêt pour être sûr d'avoir accès au salon
         await self.wait_until_ready()
         channel = self.get_channel(CHANNEL_ID)
         if not channel: return
 
-        print("🔍 Scan des offres en cours...")
+        print("🔍 Scan et nettoyage des offres en cours...")
         try:
-            # Note : J'utilise HEADERS ici pour être plus proche de ta requête Burp
             response = requests.post(API_URL, json=PAYLOAD, headers=HEADERS, timeout=15)
             if response.status_code == 200:
                 data = response.json()
                 offers = data.get('result', [])
+                current_api_ids = {str(job['id']) for job in offers}
                 
-                if not os.path.exists(DB_FILE):
-                    open(DB_FILE, 'w').close()
-                
-                seen = {}
-                with open(DB_FILE, 'r') as f:
-                    for line in f:
-                        line = line.strip()
-                        if ':' in line:
-                            job_id, msg_id = line.split(':', 1)
-                            seen[job_id] = int(msg_id)
+                # 1. Charger la base de données locale (ID_JOB:ID_MESSAGE)
+                seen_data = {}
+                if os.path.exists(DB_FILE):
+                    with open(DB_FILE, 'r') as f:
+                        for line in f:
+                            if ':' in line:
+                                j_id, m_id = line.strip().split(':')
+                                seen_data[j_id] = int(m_id)
 
+                # 2. NETTOYAGE : Supprimer les messages des offres disparues
+                ids_to_remove = []
+                for job_id, msg_id in seen_data.items():
+                    if job_id not in current_api_ids:
+                        try:
+                            msg = await channel.fetch_message(msg_id)
+                            await msg.delete()
+                            print(f"🗑️ Offre {job_id} plus d'actualité, message supprimé.")
+                        except discord.NotFound:
+                            pass # Déjà supprimé manuellement
+                        except Exception as e:
+                            print(f"⚠️ Erreur suppression message {msg_id}: {e}")
+                        ids_to_remove.append(job_id)
+                
+                # On retire les IDs supprimés de notre dictionnaire en mémoire
+                for j_id in ids_to_remove:
+                    del seen_data[j_id]
+
+                # 3. AJOUT : Poster les nouvelles offres
                 new_count = 0
-                for job in reversed(offers):
+                for job in reversed(offers): # Du plus ancien au plus récent
                     job_id = str(job['id'])
                     
-                    if job_id not in seen:
-                        # Make Mexico jobs more visible with red color
+                    if job_id not in seen_data:
                         color = discord.Color.red() if job['countryName'] == 'Mexique' else discord.Color.blue()
+                        
                         embed = discord.Embed(
                             title=f"🌎 {job['countryName']} : {job['missionTitle']}",
                             url=f"https://mon-vie-via.businessfrance.fr/offres/{job_id}",
                             color=color
                         )
-                        embed.add_field(name="🏢 Entreprise", value=job['organizationName'], inline=True)
+                        embed.add_field(name="🏢 Entreprise", value=f"**{job['organizationName']}**", inline=True)
                         embed.add_field(name="📍 Ville", value=job['cityName'], inline=True)
                         embed.add_field(name="💰 Indemnité", value=f"{job['indemnite']}€ / mois", inline=False)
-                        # Add description for all jobs
-                        description = job.get('description', 'Aucune description disponible')
-                        embed.add_field(name="📄 Description", value=description[:1000], inline=False)  # Limit to 1000 chars
                         
+                        # Description (limitée pour l'embed)
+                        desc = job.get('missionDescription', 'Pas de description.')
+                        embed.description = (desc[:300] + '...') if len(desc) > 300 else desc
+
                         msg = await channel.send(embed=embed)
-                        seen[job_id] = msg.id
+                        seen_data[job_id] = msg.id
                         new_count += 1
                         await asyncio.sleep(1.5)
-                
-                # Synchronize DB_FILE with current offers and remove old messages
-                current_ids = set(str(job['id']) for job in offers)
-                for job_id, msg_id in seen.items():
-                    if job_id not in current_ids:
-                        try:
-                            msg = await channel.fetch_message(msg_id)
-                            await msg.delete()
-                        except discord.NotFound:
-                            pass  # Message already deleted
-                        except Exception as e:
-                            print(f"Error deleting message {msg_id}: {e}")
-                
+
+                # 4. SAUVEGARDE : Mettre à jour le fichier texte
                 with open(DB_FILE, 'w') as f:
-                    for job_id in current_ids:
-                        if job_id in seen:
-                            f.write(f"{job_id}:{seen[job_id]}\n")
+                    for j_id, m_id in seen_data.items():
+                        f.write(f"{j_id}:{m_id}\n")
                 
-                print(f"✅ Terminé. {new_count} nouvelles offres.")
+                print(f"✅ Cycle terminé. {new_count} nouveaux, {len(ids_to_remove)} supprimés.")
+
         except Exception as e:
-            print(f"💥 Erreur : {e}")
+            print(f"💥 Erreur globale : {e}")
 
 bot = JobBot()
 
 @bot.event
 async def on_ready():
-    # On ne met QUE des logs ici, on n'appelle PAS check_jobs
-    print(f'--- {bot.user.name} est en ligne ---')
+    print(f'--- {bot.user.name} est en ligne (Scan + Purge) ---')
 
 bot.run(TOKEN)
