@@ -82,7 +82,7 @@ class ConfigView(discord.ui.View):
         
         if not zone_id:
             await interaction.response.send_message("✅ Configuration globale enregistrée. Lancement du scan...", ephemeral=True)
-            await interaction.message.delete()
+            if interaction.message: await interaction.message.delete()
             await self.bot.check_jobs()
             self.stop()
             return
@@ -90,7 +90,7 @@ class ConfigView(discord.ui.View):
         all_pays = mapping.get("PAYS_PAR_ZONE", {}).get(zone_id, {})
         if not all_pays:
              await interaction.response.send_message("✅ Filtres enregistrés. Lancement du scan...", ephemeral=True)
-             await interaction.message.delete()
+             if interaction.message: await interaction.message.delete()
              await self.bot.check_jobs()
              self.stop()
              return
@@ -119,8 +119,11 @@ class AutoAlerteView(discord.ui.View):
         self.bot_ref.current_payload["countryalert"] = None
         save_config(self.bot_ref.current_payload)
         await interaction.response.send_message("⚪ Alerte désactivée. Lancement du scan...", ephemeral=True)
-        await interaction.message.delete()
-        await self.bot_ref.check_jobs()
+        if interaction.message: await interaction.message.delete()
+        if not self.bot_ref.check_jobs.is_running():
+            self.bot_ref.check_jobs.start()
+        else:
+            await self.bot_ref.check_jobs()
         self.stop()
 
 class AutoCountrySelect(discord.ui.Select):
@@ -133,8 +136,11 @@ class AutoCountrySelect(discord.ui.Select):
         view.bot_ref.current_payload["countryalert"] = self.values[0]
         save_config(view.bot_ref.current_payload)
         await interaction.response.send_message(f"🚩 Alerte activée pour `{self.values[0]}`. Scan...", ephemeral=True)
-        await interaction.message.delete()
-        await view.bot_ref.check_jobs()
+        if interaction.message: await interaction.message.delete()
+        if not view.bot_ref.check_jobs.is_running():
+            view.bot_ref.check_jobs.start()
+        else:
+            await view.bot_ref.check_jobs()
         view.stop()
 
 # --- LE BOT ---
@@ -146,7 +152,7 @@ class JobBot(commands.Bot):
         self.current_payload = load_config()
 
     async def setup_hook(self):
-        self.check_jobs.start()
+        pass
 
     @tasks.loop(minutes=30)
     async def check_jobs(self):
@@ -154,30 +160,40 @@ class JobBot(commands.Bot):
         channel = self.get_channel(CHANNEL_ID)
         if not channel: return
         
-        print("🔍 Scan en cours...")
+        print("\n--- 🔍 DÉBUT DU SCAN ---")
         try:
-            api_payload = self.current_payload.copy()
-            api_payload.pop('countryalert', None) 
+            # Construction du payload strict pour l'API
+            api_payload = {
+                "limit": self.current_payload.get("limit", 50),
+                "skip": 0,
+                "query": None,
+                "geographicZones": self.current_payload.get("geographicZones", []),
+                "specializationsIds": self.current_payload.get("specializationsIds", []),
+                "missionsDurations": [],
+                "teletravail": [],
+                "porteEnv": []
+            }
 
-            for key in ['specializationsIds', 'missionsDurations', 'geographicZones']:
-                if api_payload.get(key) == [''] or api_payload.get(key) is None:
-                    api_payload[key] = []
-
+            print(f"📡 ENVOI REQUÊTE -> {json.dumps(api_payload)}")
             response = requests.post(API_URL, json=api_payload, timeout=15)
+            print(f"📥 RÉPONSE API [Code {response.status_code}]")
             
             if response.status_code == 200:
                 data = response.json()
                 offers = data.get('result', [])
+                print(f"📦 OFFRES REÇUES : {len(offers)}")
+                
                 current_api_ids = {str(job['id']) for job in offers}
                 
                 seen_data = {}
                 if os.path.exists(DB_FILE):
-                    with open(DB_FILE, 'r') as f:
+                    with open(DB_FILE, 'r', encoding='utf-8') as f:
                         for line in f:
                             if ':' in line:
                                 j_id, m_id = line.strip().split(':')
                                 seen_data[j_id] = int(m_id)
 
+                # Nettoyage des offres expirées
                 for job_id, msg_id in list(seen_data.items()):
                     if job_id not in current_api_ids:
                         try:
@@ -190,7 +206,7 @@ class JobBot(commands.Bot):
                 for job in reversed(offers):
                     job_id = str(job['id'])
                     if job_id not in seen_data:
-                        # --- LOGIQUE ALERTE ---
+                        # Logique d'alerte rouge
                         is_alert = False
                         if alert_country:
                             c_name = str(job.get('countryName', '')).upper()
@@ -202,16 +218,15 @@ class JobBot(commands.Bot):
                         color = discord.Color.red() if is_alert else discord.Color.blue()
                         prefix = "🚨 " if is_alert else "🌎 "
                         
-                        # --- PREPARATION DES DONNÉES ---
-                        ville = job.get('cityName', 'Non spécifiée').upper()
-                        entreprise = job.get('organizationName', 'Inconnue').upper()
+                        # Récupération de tes paramètres vérifiés
+                        ville = str(job.get('cityName', 'Non spécifiée')).upper()
+                        entreprise = str(job.get('organizationName', 'Inconnue')).upper()
                         desc = job.get('missionDescription', 'Pas de description.')
                         if len(desc) > 250: desc = desc[:247] + "..."
                         
                         indemnite = job.get('indemnite', '0')
                         indemnite_str = f"{indemnite}€" if isinstance(indemnite, str) else f"{indemnite:,.2f}€".replace(",", " ")
 
-                        # --- CONSTRUCTION EMBED ---
                         embed = discord.Embed(
                             title=f"{prefix}{job['countryName'].upper()} : {job['missionTitle']}", 
                             url=f"https://mon-vie-via.businessfrance.fr/offres/{job_id}",
@@ -226,45 +241,30 @@ class JobBot(commands.Bot):
                         seen_data[job_id] = msg.id
                         await asyncio.sleep(1)
 
-                with open(DB_FILE, 'w') as f:
+                with open(DB_FILE, 'w', encoding='utf-8') as f:
                     for j_id, m_id in seen_data.items(): f.write(f"{j_id}:{m_id}\n")
+                print("--- ✅ SCAN TERMINÉ ---")
+            else:
+                print(f"⚠️ ERREUR API : {response.text}")
         except Exception as e:
-            print(f"💥 Erreur lors du scan : {e}")
+            print(f"💥 ERREUR CRITIQUE : {e}")
 
 bot = JobBot()
 
 @bot.event
 async def on_ready():
-    print(f'--- {bot.user.name} prêt ---')
-    
-    # On récupère le salon
-    channel = bot.get_channel(CHANNEL_ID)
-    
-    # Si get_channel échoue (cache vide), on tente fetch_channel
-    if not channel:
-        try:
-            channel = await bot.fetch_channel(CHANNEL_ID)
-        except Exception as e:
-            print(f"❌ Impossible de trouver le salon {CHANNEL_ID} : {e}")
-            return
+    print(f'--- {bot.user.name} connecté ---')
+    channel = bot.get_channel(CHANNEL_ID) or await bot.fetch_channel(CHANNEL_ID)
+    if channel:
+        await channel.send("👋 **Bienvenue !** \nLe bot est prêt. Réglez vos filtres ci-dessous pour commencer à recevoir les offres :", view=ConfigView(bot), delete_after=60)
 
-    # On prépare la vue
-    view = ConfigView(bot)
-    
-    # On envoie le message de bienvenue
-    try:
-        await channel.send("👋 **Bienvenue !**\nLe bot est prêt. Réglez vos filtres ci-dessous pour commencer à recevoir les offres :", view=view)
-        print("✅ Message de bienvenue envoyé avec succès.")
-    except Exception as e:
-        print(f"❌ Erreur lors de l'envoi du message : {e}")
 @bot.command()
 async def config(ctx):
-    view = ConfigView(bot, ctx)
-    await ctx.send("⚙️ **Configuration**", view=view)
+    await ctx.send("⚙️ **Configuration**", view=ConfigView(bot, ctx))
 
 @bot.command()
 async def force_query(ctx):
-    await ctx.send("🔄 **Scan forcé...**")
+    await ctx.send("🔄 **Scan manuel...**")
     await bot.check_jobs()
 
 bot.run(TOKEN)
