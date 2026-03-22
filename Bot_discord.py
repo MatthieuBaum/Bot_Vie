@@ -237,10 +237,8 @@ bot = JobBot()
 async def on_ready():
     print(f'--- {bot.user.name} prêt ---')
     channel = bot.get_channel(CHANNEL_ID)
-    if not bot.current_payload.get("geographicZones") and not bot.current_payload.get("specializationsIds"):
-        if channel:
-            view = ConfigView(bot)
-            await channel.send("👋 **Bienvenue !**\nReglez les filtres :", view=view)
+    view = ConfigView(bot)
+    await channel.send("👋 **Bienvenue !**\nReglez les filtres :", view=view)
 
 @bot.command()
 async def config(ctx):
