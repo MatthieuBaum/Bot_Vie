@@ -236,10 +236,27 @@ bot = JobBot()
 @bot.event
 async def on_ready():
     print(f'--- {bot.user.name} prêt ---')
+    
+    # On récupère le salon
     channel = bot.get_channel(CHANNEL_ID)
-    view = ConfigView(bot)
-    await channel.send("👋 **Bienvenue !**\nReglez les filtres :", view=view)
+    
+    # Si get_channel échoue (cache vide), on tente fetch_channel
+    if not channel:
+        try:
+            channel = await bot.fetch_channel(CHANNEL_ID)
+        except Exception as e:
+            print(f"❌ Impossible de trouver le salon {CHANNEL_ID} : {e}")
+            return
 
+    # On prépare la vue
+    view = ConfigView(bot)
+    
+    # On envoie le message de bienvenue
+    try:
+        await channel.send("👋 **Bienvenue !**\nLe bot est prêt. Réglez vos filtres ci-dessous pour commencer à recevoir les offres :", view=view)
+        print("✅ Message de bienvenue envoyé avec succès.")
+    except Exception as e:
+        print(f"❌ Erreur lors de l'envoi du message : {e}")
 @bot.command()
 async def config(ctx):
     view = ConfigView(bot, ctx)
