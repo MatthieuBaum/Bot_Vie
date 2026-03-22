@@ -7,7 +7,7 @@ import json
 
 # --- CONFIGURATION ---
 TOKEN = os.getenv('DISCORD_TOKEN')
-CHANNEL_ID = 1484325069860769953
+CHANNEL_ID = os.getenv('DISCORD_CHANNEL_ID')
 API_URL = "https://civiweb-api-prd.azurewebsites.net/api/Offers/search"
 DB_FILE = "seen_jobs.txt"
 CONFIG_FILE = "bot_config.json"
