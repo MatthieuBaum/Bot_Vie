@@ -1,0 +1,4 @@
+bot_config copy.json
+bot_config.json
+seen_jobs.txt
+bot_discord_dev.py

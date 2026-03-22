@@ -1,0 +1,46 @@
+{
+    "SPECIALIZATIONS": {
+        "Achats, logistique et transport": "243",
+        "Agricole et agroalimentaire": "190",
+        "Arts et litterature": "36",
+        "Commerce": "193",
+        "Commerces services": "89",
+        "Construction": "196",
+        "Droit, juridique et fiscal": "214",
+        "Finance, comptabilité et gestion de banques": "19",
+        "Gestion de la production industrielle": "58",
+        "Information et médias": "210",
+        "Informatique scientifique et industrielle": "212",
+        "Marketing et communication": "216",
+        "Production industrielle": "59",
+        "Public & Parapublic": "227",
+        "Ressources Humaines": "100",
+        "Santé, beauté et paramédical": "81",
+        "Sciences académique": "239",
+        "Science de la nature": "255",   
+        "Systèmes et Logiciels informatiques": "24"
+    },
+
+    "ZONES": {
+        "Afrique du nord": "7",
+        "Afrique subsaharienne": "1",
+        "Amérique du nord": "2",
+        "Amérique Latine": "3",
+        "Asie et Pacifique": "4",
+        "Europe occidentale": "5",
+        "Europe centrale et orientale": "6",
+        "Proche et Moyen-Orient": "8"
+    },
+    
+    "PAYS_PAR_ZONE": {
+        "7": { "Tunisie": "TUN", "Maroc": "MAR"},
+        "1": {"Angola": "AGO", "Bénin": "BEN", "Botswana": "BWA", "Burundi": "BDI", "Cameroun": "CMR", "Cap-Vert": "CPV", "Comores": "COM", "Congo": "COG", "Côte d'Ivoire": "CIV", "Djibouti": "DJI", "Érythrée": "ERI", "Eswatini": "SWZ", "Éthiopie": "ETH", "Gabon": "GAB", "Gambie": "GMB", "Ghana": "GHA", "Guinée": "GIN", "Guinée Équatoriale": "GNQ", "Guinée-Bissau": "GNB", "Kenya": "KEN", "Lesotho": "LSO", "Libéria": "LBR", "Madagascar": "MDG", "Malawi": "MWI", "Maurice": "MUS", "Mauritanie": "MRT", "Mozambique": "MOZ", "Namibie": "NAM", "Nigéria": "NGA", "Ouganda": "UGA", "RDC": "COD", "Rwanda": "RWA", "Sainte-Hélène": "SHN", "Sao Tomé": "STP", "Sénégal": "SEN", "Seychelles": "SYC", "Sierra Leone": "SLE", "Tanzanie": "TZA", "Tchad": "TCD", "Togo": "TGO", "Zambie": "ZMB", "Zimbabwe": "ZWE"},
+        "2": { "États-Unis": "USA", "Canada": "CAN", "Bahamas": "BHS"},
+        "3": {"Antarctique": "ATA", "Antigua-et-Barbuda": "ATG", "Antilles Néerlandaises": "ANT", "Argentine": "ARG", "Aruba": "ABW", "Barbade": "BRB", "Belize": "BLZ", "Bermudes": "BMU", "Bolivie": "BOL", "Bonaire, Saint-Eustache et Saba": "BES", "Brésil": "BRA", "Chili": "CHL", "Colombie": "COL", "Costa Rica": "CRI", "Cuba": "CUB", "Curaçao": "CUW", "Dominique": "DMA", "El Salvador": "SLV", "Équateur": "ECU", "Géorgie du Sud": "SGS", "Grenade": "GRD", "Guatemala": "GTM", "Guyana": "GUY", "Honduras": "HND", "Îles Caïmans": "CYM", "Îles Falkland": "FLK", "Îles Turks-et-Caïcos": "TCA", "Îles Vierges Brit.": "VGB", "Îles Vierges des É-U": "VIR", "Jamaïque": "JAM", "Mexique": "MEX", "Montserrat": "MSR", "Nicaragua": "NIC", "Panama": "PAN", "Paraguay": "PRY", "Pérou": "PER", "Porto Rico": "PRI", "République Dominicaine": "DOM", "Saint-Martin": "SXM", "Saint-Kitts-et-Nevis": "KNA", "Saint-Vincent-et-les-Grenadines": "VCT", "Sainte-Lucie": "LCA", "Suriname": "SUR", "Trinité-et-Tobago": "TTO", "Uruguay": "URY", "Venezuela": "VEN"},
+        "4": {"Australie": "AUS", "Bangladesh": "BGD", "Bhoutan": "BTN", "Brunei": "BRN", "Cambodge": "KHM", "Chine": "CHN", "Corée du Sud": "KOR", "Fidji": "FJI", "Guam": "GUM", "Hong Kong": "HKG", "Île Christmas": "CXR", "Îles Heard et MacDonald": "HMD", "Île Norfolk": "NFK", "Îles Cocos": "CCK", "Îles Cook": "COK", "Îles Mariannes du Nord": "MNP", "Îles Marshall": "MHL", "Îles Mineures Éloignées É-U": "UMI", "Îles Salomon": "SLB", "Inde": "IND", "Indonésie": "IDN", "Japon": "JPN", "Kiribati": "KIR", "Laos": "LAO", "Macao": "MAC", "Malaisie": "MYS", "Maldives": "MDV", "Micronésie": "FSM", "Mongolie": "MNG", "Nauru": "NRU", "Népal": "NPL", "Nouvelle-Zélande": "NZL", "Palaos": "PLW", "Papouasie-Nouvelle-Guinée": "PNG", "Philippines": "PHL", "Pitcairn": "PCN", "Samoa": "WSM", "Samoa Américaines": "ASM", "Singapour": "SGP", "Sri Lanka": "LKA", "Taïwan": "TWN", "Thaïlande": "THA", "Timor-Oriental": "TLS", "Tokelau": "TKL", "Tonga": "TON", "Tuvalu": "TUV", "Vanuatu": "VUT", "Viet Nam": "VNM"},
+        "5": {"Albanie": "ALB", "Allemagne": "DEU", "Andorre": "AND", "Autriche": "AUT", "Belgique": "BEL", "Bosnie-Herzégovine": "BIH", "Chypre": "CYP", "Croatie": "HRV", "Danemark": "DNK", "Espagne": "ESP", "Estonie": "EST", "Finlande": "FIN", "Gibraltar": "GIB", "Grèce": "GRC", "Groenland": "GRL", "Guernesey": "GGY", "Île Bouvet": "BVT", "Île de Man": "IMN", "Îles Aland": "ALA", "Îles Féroé": "FRO", "Irlande": "IRL", "Islande": "ISL", "Italie": "ITA", "Jersey": "JEY", "Kosovo": "KOS", "Liechtenstein": "LIE", "Luxembourg": "LUX", "Macédoine du Nord": "MKD", "Malte": "MLT", "Monaco": "MCO", "Monténégro": "MNE", "Norvège": "NOR", "Pays-Bas": "NLD", "Portugal": "PRT", "Royaume-Uni": "GBR", "Saint-Marin": "SMR", "Saint-Siège": "VAT", "Serbie": "SRB", "Slovénie": "SVN", "Suède": "SWE", "Suisse": "CHE", "Svalbard et Île Jan Mayen": "SJM"},
+        "6": {"Albanie": "ALB", "Allemagne": "DEU", "Andorre": "AND", "Arménie": "ARM", "Autriche": "AUT", "Belgique": "BEL", "Bosnie-Herzégovine": "BIH", "Bulgarie": "BGR", "Chypre": "CYP", "Croatie": "HRV", "Danemark": "DNK", "Espagne": "ESP", "Estonie": "EST", "Finlande": "FIN", "Géorgie": "GEO", "Gibraltar": "GIB", "Grèce": "GRC", "Groenland": "GRL", "Guernesey": "GGY", "Hongrie": "HUN", "Île de Man": "IMN", "Irlande": "IRL", "Islande": "ISL", "Italie": "ITA", "Jersey": "JEY", "Kazakhstan": "KAZ", "Kirghizistan": "KGZ", "Kosovo": "KOS", "Lettonie": "LVA", "Liechtenstein": "LIE", "Lituanie": "LTU", "Luxembourg": "LUX", "Macédoine du Nord": "MKD", "Malte": "MLT", "Moldavie": "MDA", "Monaco": "MCO", "Monténégro": "MNE", "Norvège": "NOR", "Ouzbékistan": "UZB", "Pays-Bas": "NLD", "Pologne": "POL", "Portugal": "PRT", "Roumanie": "ROU", "Royaume-Uni": "GBR", "Serbie": "SRB", "Slovaquie": "SVK", "Slovénie": "SVN", "Suède": "SWE", "Suisse": "CHE", "Tadjikistan": "TJK", "Tchéquie": "CZE", "Turkménistan": "TKM"},
+        "8": {"Arabie Saoudite": "SAU", "Azerbaïdjan": "AZE", "Bahreïn": "BHR", "Égypte": "EGY", "Émirats Arabes Unis": "ARE", "Jordanie": "JOR", "Koweït": "KWT", "Liban": "LBN", "Oman": "OMN", "Qatar": "QAT", "Turquie": "TUR"}
+    }
+}
+
